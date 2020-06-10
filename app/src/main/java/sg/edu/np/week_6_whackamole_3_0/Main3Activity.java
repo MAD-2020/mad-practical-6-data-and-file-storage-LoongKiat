@@ -27,17 +27,45 @@ public class Main3Activity extends AppCompatActivity {
      */
     private static final String FILENAME = "Main3Activity.java";
     private static final String TAG = "Whack-A-Mole3.0!";
+    private Button backLogin;
+    private RecyclerView rv;
+    private CustomScoreAdaptor adaptor;
+    private UserData userData;
+    private MyDBHandler dbHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main3);
+
+        Intent receive = getIntent();
+        String name = receive.getStringExtra("name");
+        dbHandler = new MyDBHandler(this);
+        userData = dbHandler.findUser(name);
+        for (int i : userData.getLevels()){
+            Log.d(TAG, String.valueOf(i));
+        }
+        backLogin = findViewById(R.id.backLogin);
+        rv = findViewById(R.id.recyclerView);
+        adaptor = new CustomScoreAdaptor(userData,this);
+        rv.setAdapter(adaptor);
+
+        LinearLayoutManager layout = new LinearLayoutManager(this);
+        rv.setLayoutManager(layout);
+        rv.setItemAnimator(new DefaultItemAnimator());
         /* Hint:
         This method receives the username account data and looks up the database for find the
         corresponding information to display in the recyclerView for the level selections page.
 
         Log.v(TAG, FILENAME + ": Show level for User: "+ userName);
          */
+        backLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Main3Activity.this,MainActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override

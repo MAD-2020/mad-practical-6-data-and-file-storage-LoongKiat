@@ -45,68 +45,110 @@ public class MyDBHandler extends SQLiteOpenHelper {
 
     private static final String FILENAME = "MyDBHandler.java";
     private static final String TAG = "Whack-A-Mole3.0!";
+    private static final int DATABASE_VERSION = 1;
+    private static final String DATABASE_NAME = "WhackAMole.db";
+    public static final String TABLE_USER = "users";
+    public static final String COLUMN_USERNAME = "Username";
+    public static final String COLUMN_PASSWORD = "Password";
+    public static final String COLUMN_LEVEL = "Level";
+    public static final String COLUMN_SCORE = "Score";
+    private ArrayList<Integer> levels, scores;
 
-    public MyDBHandler(Context context, String name, SQLiteDatabase.CursorFactory factory, int version)
+    public MyDBHandler(Context context)
     {
-        /* HINT:
-            This is used to init the database.
-         */
+        super(context,DATABASE_NAME,null,DATABASE_VERSION);
     }
     @Override
     public void onCreate(SQLiteDatabase db)
     {
-        /* HINT:
-            This is triggered on DB creation.
-            Log.v(TAG, "DB Created: " + CREATE_ACCOUNTS_TABLE);
-         */
-
+        String CREATE_USERS_TABLE = "CREATE TABLE " + TABLE_USER +
+                " ("+ COLUMN_USERNAME +" TEXT,"
+                +  COLUMN_PASSWORD + " TEXT,"
+                + COLUMN_LEVEL + " INTEGER,"
+                + COLUMN_SCORE + " INTEGER" + " )";
+        db.execSQL(CREATE_USERS_TABLE);
+        Log.d(TAG, "DB Created: " + CREATE_USERS_TABLE);
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
     {
-        /* HINT:
-            This is triggered if there is a new version found. ALL DATA are replaced and irreversible.
-         */
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
+        onCreate(db);
     }
 
     public void addUser(UserData userData)
     {
-            /* HINT:
-                This adds the user to the database based on the information given.
-                Log.v(TAG, FILENAME + ": Adding data for Database: " + values.toString());
-             */
+        SQLiteDatabase db = this.getReadableDatabase();
+        for(int i = 0; i < 10; i ++){
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_USERNAME, userData.getMyUserName());
+            values.put(COLUMN_PASSWORD, userData.getMyPassword());
+            values.put(COLUMN_LEVEL, userData.getLevels().get(i));
+            values.put(COLUMN_SCORE, userData.getScores().get(i));
+            db.insert(TABLE_USER, null, values);
+            Log.d(TAG, FILENAME + ": Adding data for Database: " + values.toString());
+        }
+
+        db.close();
     }
 
     public UserData findUser(String username)
     {
-        /* HINT:
-            This finds the user that is specified and returns the data information if it is found.
-            If not found, it will return a null.
-            Log.v(TAG, FILENAME +": Find user form database: " + query);
+        String query = "SELECT * FROM " + TABLE_USER
+                + " WHERE " + COLUMN_USERNAME + " = \"" + username + "\"";
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query,null);
+        UserData userData = new UserData();
+        if (cursor.moveToFirst()){
+            userData.setMyUserName(cursor.getString(0));
+            userData.setMyPassword(cursor.getString(1));
+            levels = userData.getLevels();
+            scores = userData.getScores();
+            int level = Integer.parseInt(cursor.getString(2));
+            levels.add(level);
+            int score = Integer.parseInt(cursor.getString(3));
+            scores.add(score);
 
-            The following should be used in getting the query data.
-            you may modify the code to suit your design.
+        }
+        while (cursor.moveToNext()){
+            int level = Integer.parseInt(cursor.getString(2));
+            levels.add(level);
+            int score = Integer.parseInt(cursor.getString(3));
+            scores.add(score);
+        }
+        userData.setLevels(levels);
+        userData.setScores(scores);
+        cursor.close();
+        db.close();
+        return userData;
+    }
 
-            if(cursor.moveToFirst()){
-                do{
-                    ...
-                    .....
-                    ...
-                }while(cursor.moveToNext());
-                Log.v(TAG, FILENAME + ": QueryData: " + queryData.getLevels().toString() + queryData.getScores().toString());
-            }
-            else{
-                Log.v(TAG, FILENAME+ ": No data found!");
-            }
-         */
+    public void updateScore(String username, int level, int score){
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_SCORE,score);
+        String whereQuery = COLUMN_USERNAME + " =\"" + username + "\"" + " AND "
+                + COLUMN_LEVEL + " = " + level;
+        String whereClause = COLUMN_USERNAME + "=" + "\"" + username + "\"" + " AND " + COLUMN_LEVEL + "=" + level;
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.update(TABLE_USER,values,whereQuery,null);
+        db.close();
     }
 
     public boolean deleteAccount(String username) {
-        /* HINT:
-            This finds and delete the user data in the database.
-            This is not reversible.
-            Log.v(TAG, FILENAME + ": Database delete user: " + query);
-         */
-
+        boolean result = false;
+        String query = "SELECT * FROM " + TABLE_USER + " WHERE "
+                + COLUMN_USERNAME + "=\"" + username + "\"";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(query,null);
+        UserData userData = new UserData();
+        if (cursor.moveToFirst()){
+            userData.setMyUserName(cursor.getString(0));
+            db.delete(TABLE_USER, COLUMN_USERNAME + "= ?",
+                    new String[]{userData.getMyUserName()});
+            cursor.close();
+            result = true;
+        }
+        db.close();
+        return result;
     }
 }

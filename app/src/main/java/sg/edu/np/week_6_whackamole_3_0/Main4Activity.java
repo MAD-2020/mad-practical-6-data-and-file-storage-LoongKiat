@@ -11,7 +11,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 public class Main4Activity extends AppCompatActivity {
@@ -36,90 +35,453 @@ public class Main4Activity extends AppCompatActivity {
     private static final String TAG = "Whack-A-Mole3.0!";
     CountDownTimer readyTimer;
     CountDownTimer newMolePlaceTimer;
+    private Button backBtn, target, target2, button0,button1,button2,button3,button4,button5,button6,button7,button8;
+    private int score = 0;
+    private TextView tv;
+    private MyDBHandler dbHandler;
+    private UserData userData;
+    private String level,username, highScore;
 
     private void readyTimer(){
-        /*  HINT:
-            The "Get Ready" Timer.
-            Log.v(TAG, "Ready CountDown!" + millisUntilFinished/ 1000);
-            Toast message -"Get Ready In X seconds"
-            Log.v(TAG, "Ready CountDown Complete!");
-            Toast message - "GO!"
-            belongs here.
-            This timer countdown from 10 seconds to 0 seconds and stops after "GO!" is shown.
-         */
+        readyTimer = new CountDownTimer(10000,1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                Toast.makeText(Main4Activity.this,"Get ready in " + millisUntilFinished/1000 + " seconds",Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Ready CountDown!" + millisUntilFinished/1000);
+
+            }
+            @Override
+            public void onFinish() {
+                Toast.makeText(Main4Activity.this,"GO!",Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Ready CountDown Complete!");
+                readyTimer.cancel();
+                placeMoleTimer();
+            }
+        };
+        readyTimer.start();
     }
     private void placeMoleTimer(){
-        /* HINT:
-           Creates new mole location each second.
-           Log.v(TAG, "New Mole Location!");
-           setNewMole();
-           belongs here.
-           This is an infinite countdown timer.
-         */
+        int total = 0,interval = 0;
+        switch (Integer.parseInt(level)){
+            case 1:{
+                total = 10000;
+                interval = 10000;
+                break;
+            }
+            case 2:{
+                total = 9000;
+                interval = 9000;
+                break;
+            }
+            case 3:{
+                total = 8000;
+                interval = 8000;
+                break;
+            }
+            case 4:{
+                total = 7000;
+                interval = 7000;
+                break;
+            }
+            case 5:{
+                total = 6000;
+                interval = 6000;
+                break;
+            }
+            case 6:{
+                total = 5000;
+                interval = 5000;
+                break;
+            }
+            case 7:{
+                total = 4000;
+                interval = 4000;
+                break;
+            }
+            case 8:{
+                total = 3000;
+                interval = 3000;
+                break;
+            }
+            case 9:{
+                total = 2000;
+                interval = 2000;
+                break;
+            }
+            default:{
+                total = 1000;
+                interval = 1000;
+                break;
+            }
+        }
+        if (Integer.parseInt(level) < 6){
+            newMolePlaceTimer = new CountDownTimer(total,interval) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    setNewMole();
+                    Log.d(TAG, "new Mole Location!");
+
+                }
+                @Override
+                public void onFinish() {
+                    target.setText("0");
+                    newMolePlaceTimer.start();
+                }
+            };
+        }
+        else{
+            newMolePlaceTimer = new CountDownTimer(total,interval) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    setNewMole();
+                    Log.d(TAG, "new Mole Location!");
+
+                }
+                @Override
+                public void onFinish() {
+                    target.setText("0");
+                    target2.setText("0");
+                    newMolePlaceTimer.start();
+                }
+            };
+        }
+        newMolePlaceTimer.start();
     }
-    private static final int[] BUTTON_IDS = {
-            /* HINT:
-                Stores the 9 buttons IDs here for those who wishes to use array to create all 9 buttons.
-                You may use if you wish to change or remove to suit your codes.*/
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main4);
-        /*Hint:
-            This starts the countdown timers one at a time and prepares the user.
-            This also prepares level difficulty.
-            It also prepares the button listeners to each button.
-            You may wish to use the for loop to populate all 9 buttons with listeners.
-            It also prepares the back button and updates the user score to the database
-            if the back button is selected.
-         */
 
+        dbHandler = new MyDBHandler(this);
+        Intent receive = getIntent();
+        username = receive.getStringExtra("username");
+        level = receive.getStringExtra("level");
+        highScore = receive.getStringExtra("score");
+        userData = dbHandler.findUser(username);
 
-        for(final int id : BUTTON_IDS){
-            /*  HINT:
-            This creates a for loop to populate all 9 buttons with listeners.
-            You may use if you wish to remove or change to suit your codes.
-            */
-        }
+        tv = findViewById(R.id.updatedScore);
+        tv.setText(String.valueOf(0));
+        backBtn = findViewById(R.id.back);
+        button0 = findViewById(R.id.zero);
+        button1 = findViewById(R.id.one);
+        button2 = findViewById(R.id.two);
+        button3 = findViewById(R.id.three);
+        button4 = findViewById(R.id.four);
+        button5 = findViewById(R.id.five);
+        button6 = findViewById(R.id.six);
+        button7 = findViewById(R.id.seven);
+        button8 = findViewById(R.id.eight);
+
+        button0.setOnClickListener(buttonClick);
+        button1.setOnClickListener(buttonClick);
+        button2.setOnClickListener(buttonClick);
+        button3.setOnClickListener(buttonClick);
+        button4.setOnClickListener(buttonClick);
+        button5.setOnClickListener(buttonClick);
+        button6.setOnClickListener(buttonClick);
+        button7.setOnClickListener(buttonClick);
+        button8.setOnClickListener(buttonClick);
+
+        readyTimer();
+
+        backBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (score > Integer.parseInt(highScore)){
+                    updateUserScore();
+                }
+                Intent intent = new Intent(Main4Activity.this,Main3Activity.class);
+                intent.putExtra("name",username);
+                startActivity(intent);
+            }
+        });
     }
     @Override
     protected void onStart(){
         super.onStart();
         readyTimer();
     }
+    public View.OnClickListener buttonClick = new View.OnClickListener() {
+        Button test;
+        @Override
+        public void onClick(View view) {
+            switch (view.getId()){
+                case R.id.zero:{
+                    test = findViewById(R.id.zero);
+                    break;
+                }
+                case R.id.one:{
+                    test = findViewById(R.id.one);
+                    break;
+                }
+                case R.id.two:{
+                    test = findViewById(R.id.two);
+                    break;
+                }
+                case R.id.three:{
+                    test = findViewById(R.id.three);
+                    break;
+                }
+                case R.id.four:{
+                    test = findViewById(R.id.four);
+                    break;
+                }
+                case R.id.five:{
+                    test = findViewById(R.id.five);
+                    break;
+                }
+                case R.id.six:{
+                    test = findViewById(R.id.six);
+                    break;
+                }
+                case R.id.seven:{
+                    test = findViewById(R.id.seven);
+                    break;
+                }
+                default:{
+                    test = findViewById(R.id.eight);
+                    break;
+                }
+            }
+            doCheck(test);
+        }
+    };
     private void doCheck(Button checkButton)
     {
-        /* Hint:
-            Checks for hit or miss
-            Log.v(TAG, FILENAME + ": Hit, score added!");
-            Log.v(TAG, FILENAME + ": Missed, point deducted!");
-            belongs here.
-        */
-
+        switch (checkButton.getId()){
+            case R.id.zero:{
+                if (button0.getText() == "*" ){
+                    score += 1;
+                    button0.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else {
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.one:{
+                if (button1.getText() == "*"){
+                    score += 1;
+                    button1.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.two:{
+                if (button2.getText() == "*"){
+                    score += 1;
+                    button2.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.three:{
+                if (button3.getText() == "*"){
+                    score += 1;
+                    button3.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.four:{
+                if (button4.getText() == "*"){
+                    score += 1;
+                    button4.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.five:{
+                if (button5.getText() == "*"){
+                    score += 1;
+                    button5.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.six:{
+                if (button6.getText() == "*"){
+                    score += 1;
+                    button6.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            case R.id.seven:{
+                if (button7.getText() == "*"){
+                    score += 1;
+                    button7.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+            default:{
+                if (button8.getText() == "*"){
+                    score += 1;
+                    button8.setText("0");
+                    Log.d(TAG, "Hit, score added!");
+                }
+                else{
+                    score -= 1;
+                    Log.d(TAG, "Missed, score deducted!");
+                }
+                tv.setText(String.valueOf(score));
+                break;
+            }
+        }
     }
 
     public void setNewMole()
     {
-        /* Hint:
-            Clears the previous mole location and gets a new random location of the next mole location.
-            Sets the new location of the mole. Adds additional mole if the level difficulty is from 6 to 10.
-         */
         Random ran = new Random();
         int randomLocation = ran.nextInt(9);
+        switch (randomLocation){
+            case 0:{
+                target = button0;
+                target.setText("*");
+                break;
+            }
+            case 1:{
+                target = button1;
+                target.setText("*");
+                break;
+            }
+            case 2:{
+                target = button2;
+                target.setText("*");
+                break;
+            }
+            case 3:{
+                target = button3;
+                target.setText("*");
+                break;
+            }
+            case 4:{
+                target = button4;
+                target.setText("*");
+                break;
+            }
+            case 5:{
+                target = button5;
+                target.setText("*");
+                break;
+            }
+            case 6:{
+                target = button6;
+                target.setText("*");
+                break;
+            }
+            case 7:{
+                target = button7;
+                target.setText("*");
+                break;
+            }
+            default:{
+                target = button8;
+                target.setText("*");
+                break;
+            }
+        }
+        if (Integer.parseInt(level) > 5){
+            int randomLocation2 = ran.nextInt(9);
+            while (randomLocation2 == randomLocation){
+                randomLocation2 = ran.nextInt(9);
+            }
+            switch (randomLocation2) {
+                case 0: {
+                    target2 = button0;
+                    target2.setText("*");
+                    break;
+                }
+                case 1: {
+                    target2 = button1;
+                    target2.setText("*");
+                    break;
+                }
+                case 2: {
+                    target2 = button2;
+                    target2.setText("*");
+                    break;
+                }
+                case 3: {
+                    target2 = button3;
+                    target2.setText("*");
+                    break;
+                }
+                case 4: {
+                    target2 = button4;
+                    target2.setText("*");
+                    break;
+                }
+                case 5: {
+                    target2 = button5;
+                    target2.setText("*");
+                    break;
+                }
+                case 6: {
+                    target2 = button6;
+                    target2.setText("*");
+                    break;
+                }
+                case 7: {
+                    target2 = button7;
+                    target2.setText("*");
+                    break;
+                }
+                default: {
+                    target2 = button8;
+                    target2.setText("*");
+                    break;
+                }
+            }
+        }
 
     }
 
     private void updateUserScore()
     {
-
-     /* Hint:
-        This updates the user score to the database if needed. Also stops the timers.
-        Log.v(TAG, FILENAME + ": Update User Score...");
-      */
+        dbHandler.updateScore(username,Integer.parseInt(level),score);
         newMolePlaceTimer.cancel();
         readyTimer.cancel();
-    }
 
+    }
 }
